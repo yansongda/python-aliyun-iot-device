@@ -15,6 +15,8 @@ HTTPS_AUTH = "https://iot-auth.{region}.aliyuncs.com/auth/devicename"
 DEFAULT_PUBLISH_TOPIC = "/{product_key}/{device_name}/update"
 DEFAULT_SUBSCRIBE_TOPIC = "/{product_key}/{device_name}/get"
 
+KEEPALIVE = 60
+
 
 class Client(object):
     """阿里云 IOT 套件 MQTT 客户端
@@ -26,6 +28,10 @@ class Client(object):
     # 是否使用域名直连
     domain_direct = True
 
+    mqtt_uri = DOMAIN_DIRECT_URI
+
+    mqtt_port = DOMAIN_DIRECT_PORT
+
     def __init__(self, product_device, client_id=None, region="cn-shanghai"):
         super(Client, self).__init__()
         if not isinstance(product_device, tuple):
@@ -34,17 +40,22 @@ class Client(object):
         self.client_id = client_id
         self.region = region
         self.product_key, self.device_name, self.device_secret = product_device
-        self.mqtt = None
-        mqtt_auth_info = self.get_mqtt_client()
+        self.mqtt = self.get_mqtt_client()
 
-    def connect(self):
-        pass
+    def connect(self, keepalive=KEEPALIVE):
+        return self.mqtt.connect(self.mqtt_uri, self.mqtt_port, keepalive)
 
-    def get_mqtt_info(self):
+    def get_mqtt_client(self):
         if self.domain_direct:
-            return self._get_doamin_direct_mqtt_info()
+            mqtt_client_id, mqtt_user, mqtt_passwd = self._get_doamin_direct_mqtt_info()
         else:
-            return self._get_https_mqtt_info()
+            mqtt_client_id, mqtt_user, mqtt_passwd = self._get_https_mqtt_info()
+
+        mqtt = mqtt_client(mqtt_client_id)
+        mqtt.tls_set(ca_certs="root.cer")
+        mqtt.username_pw_set(mqtt_user, mqtt_passwd)
+
+        return mqtt
 
     @tls.setter
     def tls(self, value):
