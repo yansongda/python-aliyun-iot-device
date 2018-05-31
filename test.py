@@ -9,14 +9,11 @@ DEVICE_NAME = "iot_device_01"
 DEVICE_SECRET = "3TSqd6sfzjSkSwEmLmcAdZnI0oGlmRZ8"
 CLIENT_ID = ""
 
-PUBLISH_TOPIC = "/" + PRODUCE_KEY + "/" + DEVICE_NAME + "/update"
-SUBSCRIBE_TOPIC = "/" + PRODUCE_KEY + "/" + DEVICE_NAME + "/get"
-
-iot = Client(("b1VzFx30hEm", "iot_device_01", "3TSqd6sfzjSkSwEmLmcAdZnI0oGlmRZ8"))
+iot = Client((PRODUCE_KEY, DEVICE_NAME, DEVICE_SECRET), CLIENT_ID)
 
 iot.connect()
 
-iot.mqtt.loop_start()
+iot.loop_start()
 while True:
-    iot.mqtt.publish(PUBLISH_TOPIC, 'success', 1)
+    iot.publish('success', 1)
     time.sleep(5)

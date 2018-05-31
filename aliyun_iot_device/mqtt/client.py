@@ -30,7 +30,7 @@ class Client(object):
         if not isinstance(product_device, tuple):
             raise TypeError('{pd} Must Be A Tuple'.format(pd=product_device))
 
-        if client_id is None:
+        if client_id is None or client_id == "":
             client_id = str(round(time.time() * 1000))
 
         self.client_id = client_id
@@ -45,13 +45,13 @@ class Client(object):
     def connect(self, keepalive=KEEPALIVE):
         return self.mqtt.connect(self.mqtt_uri, self.mqtt_port, keepalive)
 
-    def publish(self, topic, payload=None, qos=0, retain=False):
+    def publish(self, payload=None, qos=0, topic=DEFAULT_PUBLISH_TOPIC, retain=False):
         return self.mqtt.publish(topic, payload, qos, retain)
 
-    def subscribe(self, topic, qos=0):
+    def subscribe(self, qos=0, topic=DEFAULT_SUBSCRIBE_TOPIC):
         return self.mqtt.subscribe(topic, qos)
 
-    def unsubscribe(self, topic):
+    def unsubscribe(self, topic=DEFAULT_SUBSCRIBE_TOPIC):
         return self.mqtt.unsubscribe(topic)
 
     def loop_start(self):
