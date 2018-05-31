@@ -130,7 +130,7 @@ class Client(object):
 
         mqtt = mqtt_client.Client(mqtt_client_id, transport=self.transport)
         mqtt.username_pw_set(mqtt_user, mqtt_passwd)
-        if self.tls:
+        if not self.domain_direct or self.tls:
             mqtt.tls_set(ca_certs=self.ca_certs)
 
         return mqtt
