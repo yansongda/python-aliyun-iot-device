@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+__author__ = "yansongda <me@yansongda.cn>"
+
+import context
 from aliyun_iot_device.mqtt import Client as IOT
 import time
 

@@ -163,4 +163,22 @@ class Client(object):
     def _get_https_mqtt_info(self):
         """获取HTTPS 连接方法 MQTT 连接信息
         """
-        pass
+        import requests
+
+        content = "clientId" + self.client_id + "deviceName" + self.device_name + "productKey" + self.product_key + "timestamp" + str(round(time.time()))
+        sign = hmac.new(bytes(self.device_secret, 'utf-8'), bytes(content, 'utf-8'), hashlib.sha1).hexdigest()
+        response = requests.post(HTTPS_AUTH.format(region=self.region),
+                                 data={'productKey': self.product_key,
+                                       'deviceName': self.device_name,
+                                       'clientId': self.client_id,
+                                       'signmethod': "hmacsha1",
+                                       "resources": "mqtt",
+                                       "timestamp": str(round(time.time())),
+                                       "sign": sign}).json()
+        if response['code'] != 200:
+            raise ValueError("获取连接信息错误:{}".format(response))
+
+        self.mqtt_uri = response['data']['resources']['mqtt']['host']
+        self.mqtt_port = response['data']['resources']['mqtt']['port']
+
+        return self.client_id, response['data']['iotId'], response['data']['iotToken']
