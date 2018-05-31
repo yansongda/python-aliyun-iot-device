@@ -11,6 +11,7 @@ with open("README.md", "r") as fh:
 
 requires = [
     'paho-mqtt>=1.3.1',
+    'requests>=2.18.4'
 ]
 
 if sys.argv[-1] == 'publish':
