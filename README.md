@@ -10,6 +10,11 @@
 - [ ] CoAP
 
 
+## 环境
+
+- Python3
+
+
 ## 安装
 
 `pip3 install yansondga-aliyun-iot-device`
@@ -35,7 +40,10 @@ iot.loop_start()
 while True:
     iot.publish('success', 1)
     time.sleep(5)
+
+# iot.mqtt 为原始 mqtt 客户端
 ```
+
 
 ## 说明
 
