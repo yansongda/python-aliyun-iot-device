@@ -11,8 +11,7 @@ CLIENT_ID = ""
 PUBLISH_TOPIC = "/" + PRODUCE_KEY + "/" + DEVICE_NAME + "/update"
 SUBSCRIBE_TOPIC = "/" + PRODUCE_KEY + "/" + DEVICE_NAME + "/get"
 
-iot = Client(("b1VzFx30hEm", "iot_device_01", "3TSqd6sfzjSkSwEmLmcAdZnI0oGlmRZ8"), "yansongda")
-iot.tls = False
+iot = Client(("b1VzFx30hEm", "iot_device_01", "3TSqd6sfzjSkSwEmLmcAdZnI0oGlmRZ8"), "yansongda", tls=False)
 
 iot.connect()
 

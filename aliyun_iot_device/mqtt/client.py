@@ -17,26 +17,21 @@ DEFAULT_PUBLISH_TOPIC = "/{product_key}/{device_name}/update"
 DEFAULT_SUBSCRIBE_TOPIC = "/{product_key}/{device_name}/get"
 
 KEEPALIVE = 60
-CA_CERTS = os.path.join(os.getcwd(), 'root.cer')
 
 
 class Client(object):
     """阿里云 IOT 套件 MQTT 客户端
     """
 
-    # 是否使用 TLS 加密
-    tls = True
-
-    # 是否使用域名直连
-    domain_direct = True
-
-    def __init__(self, product_device, client_id=None, region="cn-shanghai"):
+    def __init__(self, product_device, client_id=None, region="cn-shanghai", domain_direct=True, ca_certs=None):
         super(Client, self).__init__()
         if not isinstance(product_device, tuple):
             raise TypeError('{pd} Must Be A Tuple'.format(pd=product_device))
 
         self.client_id = client_id
         self.region = region
+        self.ca_certs = ca_certs
+        self.domain_direct = domain_direct
         self.product_key, self.device_name, self.device_secret = product_device
 
         self.mqtt_uri = DOMAIN_DIRECT_URI.format(product_key=self.product_key, region=region)
@@ -54,14 +49,14 @@ class Client(object):
 
         mqtt = mqtt_client.Client(mqtt_client_id)
         mqtt.username_pw_set(mqtt_user, mqtt_passwd)
-        if self.tls:
-            mqtt.tls_set(ca_certs=CA_CERTS)
+        if self.ca_certs:
+            mqtt.tls_set(ca_certs=self.ca_certs)
 
         return mqtt
 
     def _get_doamin_direct_mqtt_info(self):
         mode = "3"
-        if self.tls:
+        if self.ca_certs:
             mode = "2"
 
         mqtt_client_id = self.client_id + "|securemode=" + mode + ",signmethod=hmacsha1,timestamp=" + str(round(time.time())) + "|"
