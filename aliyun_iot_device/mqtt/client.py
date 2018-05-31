@@ -77,7 +77,7 @@ class Client(object):
         """
         return self.mqtt.connect(self.mqtt_uri, self.mqtt_port, keepalive)
 
-    def publish(self, payload=None, qos=0, topic=DEFAULT_PUBLISH_TOPIC, retain=False):
+    def publish(self, payload=None, qos=0, retain=False, topic=None):
         """payload: (str/int/float/None) 负载
 
         qos: (int) 0/1，服务等级
@@ -87,18 +87,27 @@ class Client(object):
         retain: (bool) If set to true, the message will be set as the "last known
         good"/retained message for the topic.
         """
+        if topic is None:
+            topic = DEFAULT_PUBLISH_TOPIC.format(product_key=self.product_key, device_name=self.device_name)
+
         return self.mqtt.publish(topic, payload, qos, retain)
 
-    def subscribe(self, qos=0, topic=DEFAULT_SUBSCRIBE_TOPIC):
+    def subscribe(self, qos=0, topic=None):
         """qos: (int) 0/1，服务等级
 
         topic: (string) 订阅的主题，默认为阿里云默认主题，即："/{product_key}/{device_name}/get"
         """
+        if topic is None:
+            topic = DEFAULT_SUBSCRIBE_TOPIC.format(product_key=self.product_key, device_name=self.device_name)
+
         return self.mqtt.subscribe(topic, qos)
 
-    def unsubscribe(self, topic=DEFAULT_SUBSCRIBE_TOPIC):
+    def unsubscribe(self, topic=None):
         """topic: (string) 订阅的主题，默认为阿里云默认主题，即："/{product_key}/{device_name}/get"
         """
+        if topic is None:
+            topic = DEFAULT_SUBSCRIBE_TOPIC.format(product_key=self.product_key, device_name=self.device_name)
+
         return self.mqtt.unsubscribe(topic)
 
     def loop_start(self):
