@@ -21,11 +21,35 @@ CA_CERTS = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'root.cer')
 
 
 class Client(object):
-    """阿里云 IOT 套件 MQTT 客户端
+    """阿里云 IOT 物联网套件设备端 MQTT 客户端 SDK
+
+    基本使用方法:
+
+    from aliyun_iot_device.mqtt import Client
+    iot = Client((PRODUCE_KEY, DEVICE_NAME, DEVICE_SECRET), CLIENT_ID)
+    iot.connect()
+    iot.loop_start()
+    while True:
+        iot.publish('success', 1)
+        time.sleep(5)
     """
 
     def __init__(self, product_device, client_id=None,
-                 region="cn-shanghai", domain_direct=True, tls=True, ca_certs=CA_CERTS):
+                 region="cn-shanghai", domain_direct=True, tls=True, ca_certs=CA_CERTS, transport="tcp"):
+        """product_device: (tuple) 阿里云规定三元组，分别为 PRODUCE_KEY, DEVICE_NAME, DEVICE_SECRET
+
+        client_id: (None, str) 客户端 id，如果为 None 或者 ""，则 SDK 自动设置为当前毫秒时间戳
+
+        region: (str) 阿里云地域，目前有cn-shanghai，us-west-1，ap-southeast-1
+
+        domain_direct: (bool) 是否启用域名直连模式，默认启用
+
+        tls: (bool) 是否启用 tls 加密，默认启用
+
+        ca_certs: (str) ca 证书路径，SDK 已默认加载阿里云根证书，无特殊用途不需要更改
+
+        transport: (str) 传输模式，默认为 tcp，支持 websockets
+        """
         super(Client, self).__init__()
         if not isinstance(product_device, tuple):
             raise TypeError('{pd} Must Be A Tuple'.format(pd=product_device))
@@ -38,35 +62,59 @@ class Client(object):
         self.tls = tls
         self.ca_certs = ca_certs
         self.domain_direct = domain_direct
+        self.transport = transport
         self.product_key, self.device_name, self.device_secret = product_device
 
         self.mqtt = self._get_mqtt_client()
 
     def connect(self, keepalive=KEEPALIVE):
+        """连接阿里云 IOT 服务器
+
+        keepalive: (int) 心跳秒数，60-300，默认 60秒
+        """
         return self.mqtt.connect(self.mqtt_uri, self.mqtt_port, keepalive)
 
     def publish(self, payload=None, qos=0, topic=DEFAULT_PUBLISH_TOPIC, retain=False):
+        """payload: (str/int/float/None) 负载
+
+        qos: (int) 0/1，服务等级
+
+        topic: (string) 发布的主题，默认为阿里云默认主题，即："/{product_key}/{device_name}/update"
+
+        retain: (bool) If set to true, the message will be set as the "last known
+        good"/retained message for the topic.
+        """
         return self.mqtt.publish(topic, payload, qos, retain)
 
     def subscribe(self, qos=0, topic=DEFAULT_SUBSCRIBE_TOPIC):
+        """qos: (int) 0/1，服务等级
+
+        topic: (string) 订阅的主题，默认为阿里云默认主题，即："/{product_key}/{device_name}/get"
+        """
         return self.mqtt.subscribe(topic, qos)
 
     def unsubscribe(self, topic=DEFAULT_SUBSCRIBE_TOPIC):
+        """topic: (string) 订阅的主题，默认为阿里云默认主题，即："/{product_key}/{device_name}/get"
+        """
         return self.mqtt.unsubscribe(topic)
 
     def loop_start(self):
+        """在处理循环逻辑开始前，请先调用此方法。此方法会自动处理心跳，流入数据等
+        """
         return self.mqtt.loop_start()
 
     def loop_stop(self, force=False):
         return self.mqtt.loop_stop(force)
 
     def _get_mqtt_client(self):
+        """获取 MQTT 客户端实例
+        """
         if self.domain_direct:
             mqtt_client_id, mqtt_user, mqtt_passwd = self._get_doamin_direct_mqtt_info()
         else:
             mqtt_client_id, mqtt_user, mqtt_passwd = self._get_https_mqtt_info()
 
-        mqtt = mqtt_client.Client(mqtt_client_id)
+        mqtt = mqtt_client.Client(mqtt_client_id, transport=self.transport)
         mqtt.username_pw_set(mqtt_user, mqtt_passwd)
         if self.tls:
             mqtt.tls_set(ca_certs=self.ca_certs)
@@ -74,6 +122,8 @@ class Client(object):
         return mqtt
 
     def _get_doamin_direct_mqtt_info(self):
+        """获取域名直连 MQTT 连接信息
+        """
         mode = "3"
         if self.tls:
             mode = "2"
@@ -89,4 +139,6 @@ class Client(object):
         return mqtt_client_id, mqtt_user, mqtt_passwd
 
     def _get_https_mqtt_info(self):
+        """获取HTTPS 连接方法 MQTT 连接信息
+        """
         pass
