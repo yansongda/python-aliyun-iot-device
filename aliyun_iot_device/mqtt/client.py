@@ -11,6 +11,9 @@ import os
 DOMAIN_DIRECT_URI = "{product_key}.iot-as-mqtt.{region}.aliyuncs.com"
 DOMAIN_DIRECT_PORT = 1883
 
+WEBSOCKETS_URI = "{product_key}.iot-as-mqtt.{region}.aliyuncs.com"
+WEBSOCKETS_PORT = 443
+
 HTTPS_AUTH = "https://iot-auth.{region}.aliyuncs.com/auth/devicename"
 
 DEFAULT_PUBLISH_TOPIC = "/{product_key}/{device_name}/update"
@@ -109,7 +112,9 @@ class Client(object):
     def _get_mqtt_client(self):
         """获取 MQTT 客户端实例
         """
-        if self.domain_direct:
+        if self.transport == "websockets":
+            mqtt_client_id, mqtt_user, mqtt_passwd = self._get_websockets_mqtt_info()
+        elif self.domain_direct:
             mqtt_client_id, mqtt_user, mqtt_passwd = self._get_doamin_direct_mqtt_info()
         else:
             mqtt_client_id, mqtt_user, mqtt_passwd = self._get_https_mqtt_info()
@@ -137,6 +142,14 @@ class Client(object):
         self.mqtt_port = DOMAIN_DIRECT_PORT
 
         return mqtt_client_id, mqtt_user, mqtt_passwd
+
+    def _get_websockets_mqtt_info(self):
+        websockets_info = self._get_doamin_direct_mqtt_info()
+
+        self.mqtt_uri = WEBSOCKETS_URI.format(product_key=self.product_key, region=self.region)
+        self.mqtt_port = WEBSOCKETS_PORT
+
+        return websockets_info
 
     def _get_https_mqtt_info(self):
         """获取HTTPS 连接方法 MQTT 连接信息
