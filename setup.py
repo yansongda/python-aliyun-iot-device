@@ -14,8 +14,13 @@ requires = [
 ]
 
 if sys.argv[-1] == 'publish':
-    os.system('python setup.py sdist bdist_wheel')
+    os.system('python3 setup.py sdist bdist_wheel')
     os.system('twine upload dist/*')
+    sys.exit()
+
+if sys.argv[-1] == 'publish-test':
+    os.system('python3 setup.py sdist bdist_wheel')
+    os.system('twine upload --repository-url https://test.pypi.org/legacy/ dist/*')
     sys.exit()
 
 setuptools.setup(
