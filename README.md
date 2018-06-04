@@ -1,6 +1,6 @@
 # aliyun-iot-device-python
 
-阿里云 IOT 套件设备端 Python 开发SDK
+非官方，阿里云 IOT 套件设备端 Python 开发 SDK
 
 
 ## 支持的协议
