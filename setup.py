@@ -18,11 +18,13 @@ requires = [
 if sys.argv[-1] == 'publish':
     os.system('python3 setup.py sdist bdist_wheel')
     os.system('twine upload dist/*')
+    os.systme("rm -rf ./dist ./build ./yansongda_aliyun_iot_device.egg-info")
     sys.exit()
 
 if sys.argv[-1] == 'publish-test':
     os.system('python3 setup.py sdist bdist_wheel')
     os.system('twine upload --repository-url https://test.pypi.org/legacy/ dist/*')
+    os.systme("rm -rf ./dist ./build ./yansongda_aliyun_iot_device.egg-info")
     sys.exit()
 
 setuptools.setup(
