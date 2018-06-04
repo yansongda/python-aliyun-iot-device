@@ -6,7 +6,7 @@
 ## 支持的协议
 
 - [x] MQTT
-- [ ] HTTP
+- [x] HTTP
 - [ ] CoAP
 
 
@@ -21,6 +21,8 @@
 
 
 ## 使用
+
+### MQTT
 
 ```python
 from aliyun_iot_device.mqtt import Client as IOT
@@ -44,8 +46,7 @@ while True:
 # iot.mqtt 为原始 mqtt 客户端
 ```
 
-
-## 说明
+#### 说明
 
 -  MQTT - 域名直连与 HTTPS 认证
 
@@ -68,3 +69,26 @@ while True:
     如果需要使用 websocket，请传入 `transport="websockets"`。
 
     当使用 websocket 时，默认启用 TLS，即使用的是 wss 协议，如果不想使用 wss，请同时传入 `tls=False`
+
+### HTTP
+
+```python
+from aliyun_iot_device.http import Client as IOT
+import time
+
+PRODUCE_KEY = "b1VzFx30hEm"
+DEVICE_NAME = "iot_device_01"
+DEVICE_SECRET = "3TSqd6sfzjSkSwEmLmcAdZnI0oGlmRZ8"
+
+iot = IOT((PRODUCE_KEY, DEVICE_NAME, DEVICE_SECRET))
+
+while True:
+    iot.publish('success')
+    time.sleep(5)
+```
+
+#### 注意
+
+- 使用 http 协议进行通讯时，需要 token 进行认证，SDK 默认使用内存型缓存（cachetools 方案）进行 token 的保存。
+
+- 如果您需要自行进行其他方案进行保存（file/memcached/redis），可以 `iot.get_token(cache=False)` 获取 token，再 publish 消息时，请 `iot.publish(payload=payload, token=token)`

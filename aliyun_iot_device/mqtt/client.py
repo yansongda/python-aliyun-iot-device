@@ -41,7 +41,7 @@ class Client(object):
                  region="cn-shanghai", domain_direct=True, tls=True, ca_certs=CA_CERTS, transport="tcp"):
         """product_device: (tuple) 阿里云规定三元组，分别为 PRODUCE_KEY, DEVICE_NAME, DEVICE_SECRET
 
-        client_id: (None, str) 客户端 id，如果为 None 或者 ""，则 SDK 自动设置为当前毫秒时间戳
+        client_id: (None, str) 客户端 id，如果为 None 或者 ""，则 SDK 自动设置为 DEVICE_NAME
 
         region: (str) 阿里云地域，目前有cn-shanghai，us-west-1，ap-southeast-1
 
@@ -58,7 +58,7 @@ class Client(object):
             raise TypeError('{pd} Must Be A Tuple'.format(pd=product_device))
 
         if client_id is None or client_id == "":
-            client_id = str(round(time.time() * 1000))
+            client_id = product_device[1]
 
         self.client_id = client_id
         self.region = region
@@ -164,8 +164,6 @@ class Client(object):
         """
         import requests
 
-        content = "clientId" + self.client_id + "deviceName" + self.device_name + "productKey" + self.product_key + "timestamp" + str(round(time.time()))
-        sign = hmac.new(bytes(self.device_secret, 'utf-8'), bytes(content, 'utf-8'), hashlib.sha1).hexdigest()
         response = requests.post(HTTPS_AUTH.format(region=self.region),
                                  data={'productKey': self.product_key,
                                        'deviceName': self.device_name,
@@ -173,7 +171,7 @@ class Client(object):
                                        'signmethod': "hmacsha1",
                                        "resources": "mqtt",
                                        "timestamp": str(round(time.time())),
-                                       "sign": sign}).json()
+                                       "sign": self._get_sign()}).json()
         if response['code'] != 200:
             raise ValueError("获取连接信息错误:{}".format(response))
 
@@ -181,3 +179,7 @@ class Client(object):
         self.mqtt_port = response['data']['resources']['mqtt']['port']
 
         return self.client_id, response['data']['iotId'], response['data']['iotToken']
+
+    def _get_sign(self):
+        content = "clientId" + self.client_id + "deviceName" + self.device_name + "productKey" + self.product_key + "timestamp" + str(round(time.time()))
+        return hmac.new(bytes(self.device_secret, 'utf-8'), bytes(content, 'utf-8'), hashlib.sha1).hexdigest()
