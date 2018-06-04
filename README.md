@@ -48,7 +48,7 @@ while True:
 
 #### 说明
 
--  MQTT - 域名直连与 HTTPS 认证
+-  域名直连与 HTTPS 认证
 
     SDK 默认使用域名直连同时启用 TLS 加密。
 
@@ -56,13 +56,13 @@ while True:
 
     如果您想使用 HTTPS 认证，可在初始化时传入 `domain_direct=False` 参数，HTTPS 认证将强制使用 TLS 认证加密
 
-- MQTT - TLS 认证 CA 证书
+- TLS 认证 CA 证书
 
     SDK 默认使用了阿里云 IOT 根证书，一般情况无需修改。
 
     如一定要修改，请传入 `ca_certs="/path/to/cert/root.cer"` 
 
-- MQTT - websocket 通道
+- websocket 通道
 
     SDK 默认使用 TCP 通道。
 
