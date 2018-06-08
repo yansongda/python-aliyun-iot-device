@@ -37,7 +37,7 @@ class Client(object):
         time.sleep(5)
     """
 
-    def __init__(self, product_device, client_id=None,
+    def __init__(self, product_device, client_id=None, clean_session=True,
                  region="cn-shanghai", domain_direct=True, tls=True, ca_certs=CA_CERTS, transport="tcp"):
         """product_device: (tuple) 阿里云规定三元组，分别为 PRODUCE_KEY, DEVICE_NAME, DEVICE_SECRET
 
@@ -66,6 +66,7 @@ class Client(object):
         self.ca_certs = ca_certs
         self.domain_direct = domain_direct
         self.transport = transport
+        self.clean_session = clean_session
         self.product_key, self.device_name, self.device_secret = product_device
 
         self.mqtt = self._get_mqtt_client()
@@ -117,6 +118,40 @@ class Client(object):
     def loop_stop(self, force=False):
         return self.mqtt.loop_stop(force)
 
+    @property
+    def on_connect(self):
+        return self.mqtt.on_connect
+
+    @on_connect.setter
+    def on_connect(self, func):
+        """ 定义 mqtt 连接成功后的回调函数.
+
+        回调函数格式:
+            connect_callback(client, userdata, flags, rc)
+
+        client:     the client instance for this callback
+        userdata:   the private user data as set in Client() or userdata_set()
+        flags:      response flags sent by the broker
+        rc:         the connection result
+
+        flags is a dict that contains response flags from the broker:
+            flags['session present'] - this flag is useful for clients that are
+                using clean session set to 0 only. If a client with clean
+                session=0, that reconnects to a broker that it has previously
+                connected to, this flag indicates whether the broker still has the
+                session information for the client. If 1, the session still exists.
+
+        The value of rc indicates success or not:
+            0: Connection successful
+            1: Connection refused - incorrect protocol version
+            2: Connection refused - invalid client identifier
+            3: Connection refused - server unavailable
+            4: Connection refused - bad username or password
+            5: Connection refused - not authorised
+            6-255: Currently unused.
+        """
+        self.mqtt.on_connect = func
+
     def _get_mqtt_client(self):
         """获取 MQTT 客户端实例
         """
@@ -127,7 +162,7 @@ class Client(object):
         else:
             mqtt_client_id, mqtt_user, mqtt_passwd = self._get_https_mqtt_info()
 
-        mqtt = mqtt_client.Client(mqtt_client_id, transport=self.transport)
+        mqtt = mqtt_client.Client(mqtt_client_id, transport=self.transport, clean_session=self.clean_session)
         mqtt.username_pw_set(mqtt_user, mqtt_passwd)
         if not self.domain_direct or self.tls:
             mqtt.tls_set(ca_certs=self.ca_certs)

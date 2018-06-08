@@ -24,7 +24,7 @@
 
 ### MQTT
 
-```python
+```Python
 from aliyun_iot_device.mqtt import Client as IOT
 import time
 
@@ -42,7 +42,6 @@ iot.loop_start()
 while True:
     iot.publish('success', 1)
     time.sleep(5)
-
 # iot.mqtt 为原始 mqtt 客户端
 ```
 
@@ -72,7 +71,7 @@ while True:
 
 ### HTTP
 
-```python
+```Python
 from aliyun_iot_device.http import Client as IOT
 import time
 
