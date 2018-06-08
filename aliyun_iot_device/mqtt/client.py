@@ -152,6 +152,117 @@ class Client(object):
         """
         self.mqtt.on_connect = func
 
+    @property
+    def on_subscribe(self):
+        """如果设置此回调函数，则 mqtt broker 返回订阅消息时将调用此回调函数."""
+        return self.mqtt.on_subscribe
+
+    @on_subscribe.setter
+    def on_subscribe(self, func):
+        """ 定义订阅成功后的回调函数.
+
+        回调函数格式:
+            subscribe_callback(client, userdata, mid, granted_qos)
+
+        client:         the client instance for this callback
+        userdata:       the private user data as set in Client() or userdata_set()
+        mid:            matches the mid variable returned from the corresponding
+                        subscribe() call.
+        granted_qos:    list of integers that give the QoS level the broker has
+                        granted for each of the different subscription requests.
+        """
+        self.mqtt.on_subscribe = func
+
+    @property
+    def on_message(self):
+        """当一条客户端订阅的 topic 收到消息时，此回调函数调用.
+
+        This callback will be called for every message received. Use
+        message_callback_add() to define multiple callbacks that will be called
+        for specific topic filters."""
+        return self.mqtt.on_message
+
+    @on_message.setter
+    def on_message(self, func):
+        """ 定义收到消息时的回调函数.
+
+        回调函数格式:
+            on_message_callback(client, userdata, message)
+
+        client:     the client instance for this callback
+        userdata:   the private user data as set in Client() or userdata_set()
+        message:    an instance of MQTTMessage.
+                    This is a class with members topic, payload, qos, retain.
+        """
+        self.mqtt.on_message = func
+
+    @property
+    def on_publish(self):
+        """当客户端调用 publish() 方法成功发送一条消息给 broker 时，此回调函数运行.
+
+        For messages with QoS levels 1 and 2, this means that the appropriate
+        handshakes have completed. For QoS 0, this simply means that the message
+        has left the client.
+        This callback is important because even if the publish() call returns
+        success, it does not always mean that the message has been sent."""
+        return self.mqtt.on_publish
+
+    @on_publish.setter
+    def on_publish(self, func):
+        """ 定义 publish() 方法成功发送消息时的回调函数.
+
+        格式:
+            on_publish_callback(client, userdata, mid)
+
+        client:     the client instance for this callback
+        userdata:   the private user data as set in Client() or userdata_set()
+        mid:        matches the mid variable returned from the corresponding
+                    publish() call, to allow outgoing messages to be tracked.
+        """
+        self.mqtt.on_publish = func
+
+    @property
+    def on_unsubscribe(self):
+        """当取消订阅时，此回调函数运行."""
+        return self.mqtt.on_unsubscribe
+
+    @on_unsubscribe.setter
+    def on_unsubscribe(self, func):
+        """ 定义取消订阅某条 topic 时的回调函数.
+
+        格式:
+            unsubscribe_callback(client, userdata, mid)
+
+        client:     the client instance for this callback
+        userdata:   the private user data as set in Client() or userdata_set()
+        mid:        matches the mid variable returned from the corresponding
+                    unsubscribe() call.
+        """
+        self.mqtt.on_unsubscribe = func
+
+    @property
+    def on_disconnect(self):
+        """当和 broker 连接断开时此回调函数运行.
+        """
+        return self.mqtt.on_disconnect
+
+    @on_disconnect.setter
+    def on_disconnect(self, func):
+        """ 定义连接断开时的回调函数.
+
+        格式:
+            disconnect_callback(client, userdata, self)
+
+        client:     the client instance for this callback
+        userdata:   the private user data as set in Client() or userdata_set()
+        rc:         the disconnection result
+                    The rc parameter indicates the disconnection state. If
+                    MQTT_ERR_SUCCESS (0), the callback was called in response to
+                    a disconnect() call. If any other value the disconnection
+                    was unexpected, such as might be caused by a network error.
+        """
+        self.mqtt.on_disconnect = func
+
     def _get_mqtt_client(self):
         """获取 MQTT 客户端实例
         """
