@@ -6,13 +6,15 @@ from cachetools import TTLCache
 import requests
 import hashlib
 import json
-import time
 import hmac
 
 HTTP_URI = "https://iot-as-http.{region}.aliyuncs.com/{uri}"
 
 DEFAULT_PUBLISH_TOPIC = "/{product_key}/{device_name}/update"
 DEFAULT_SUBSCRIBE_TOPIC = "/{product_key}/{device_name}/get"
+
+SHADOW_UPDATE_TOPIC = "/shadow/update/{product_key}/{device_name}"
+SHADOW_GET_TOPIC = "/shadow/get/{product_key}/{device_name}"
 
 
 class Client(object):
@@ -47,6 +49,17 @@ class Client(object):
         """
         if topic is None:
             topic = DEFAULT_PUBLISH_TOPIC.format(product_key=self.product_key, device_name=self.device_name)
+        if topic == 'shadow':
+            import json
+            topic = SHADOW_UPDATE_TOPIC.format(product_key=self.product_key, device_name=self.device_name)
+
+            data = {"method": payload['method']}
+            if 'reported' in payload:
+                data.update({"state": {"reported": payload['reported']}})
+            if 'version' in payload:
+                data.update({"version": payload['version']})
+            payload = json.dumps(data)
+
         if token is None:
             token = self.get_token()
 

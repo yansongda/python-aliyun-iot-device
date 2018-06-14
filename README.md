@@ -196,3 +196,25 @@ while True:
 - 使用 http 协议进行通讯时，需要 token 进行认证，SDK 默认使用内存型缓存（cachetools 方案）进行 token 的保存。
 
 - 如果您需要自行进行其他方案进行保存（file/memcached/redis），可以 `iot.get_token(cache=False)` 获取 token，再 publish 消息时，请 `iot.publish(payload=payload, token=token)`
+
+
+## 设备影子系统
+
+```Python
+# 设备主动上报状态
+iot.publish(payload={"method": "update",
+                     "version": i,
+                     "reported": {"online": True}},
+            topic="shadow",
+            qos=1)
+
+# 设备主动获取设备影子内容
+iot.publish(payload={"method": "get"},
+            topic="shadow",
+            qos=1)
+
+# 设备端删除影子属性
+iot.publish(payload={"method": "delete", "reported": "null"},
+            topic="shadow",
+            qos=1)
+```
