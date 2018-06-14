@@ -52,40 +52,32 @@ while True:
     定义连接成功后的回调函数
 
     回调函数格式:
-        connect_callback(client, userdata, flags, rc)
+    
+    `connect_callback(client, userdata, flags, rc)`
         
     client:     the client instance for this callback
+
     userdata:   the private user data as set in Client() or userdata_set()
+
     flags:      response flags sent by the broker
+
     rc:         the connection result
-    
-    flags is a dict that contains response flags from the broker:
-        flags['session present'] - this flag is useful for clients that are
-            using clean session set to 0 only. If a client with clean
-            session=0, that reconnects to a broker that it has previously
-            connected to, this flag indicates whether the broker still has the
-            session information for the client. If 1, the session still exists.
-    
-    The value of rc indicates success or not:
-        0: Connection successful
-        1: Connection refused - incorrect protocol version
-        2: Connection refused - invalid client identifier
-        3: Connection refused - server unavailable
-        4: Connection refused - bad username or password
-        5: Connection refused - not authorised
-        6-255: Currently unused.
 
 - on_subscribe
 
     定义订阅成功后的回调函数
     
     回调函数格式:
-        subscribe_callback(client, userdata, mid, granted_qos)
+    
+    `subscribe_callback(client, userdata, mid, granted_qos)`
 
     client:         the client instance for this callback
+
     userdata:       the private user data as set in Client() or userdata_set()
+
     mid:            matches the mid variable returned from the corresponding
                     subscribe() call.
+
     granted_qos:    list of integers that give the QoS level the broker has
                     granted for each of the different subscription requests.
 
@@ -94,34 +86,42 @@ while True:
     定义收到消息时的回调函数.
     
     回调函数格式:
-        on_message_callback(client, userdata, message)
+    
+    `on_message_callback(client, userdata, message)`
     
     client:     the client instance for this callback
+
     userdata:   the private user data as set in Client() or userdata_set()
-    message:    an instance of MQTTMessage.
-                This is a class with members topic, payload, qos, retain.
+
+    message:    an instance of MQTTMessage.This is a class with members topic, payload, qos, retain.
+
 
 - on_publish
 
     定义 publish() 方法成功发送消息时的回调函数.
     
     格式:
-        on_publish_callback(client, userdata, mid)
+
+    `on_publish_callback(client, userdata, mid)`
         
     client:     the client instance for this callback
+
     userdata:   the private user data as set in Client() or userdata_set()
-    mid:        matches the mid variable returned from the corresponding
-                publish() call, to allow outgoing messages to be tracked.
+
+    mid:        matches the mid variable returned from the corresponding publish() call, to allow outgoing messages to be tracked.
 
 - on_unsubscribe
 
     定义取消订阅某条 topic 时的回调函数.
     
     格式:
-        unsubscribe_callback(client, userdata, mid)
+
+    `unsubscribe_callback(client, userdata, mid)`
         
     client:     the client instance for this callback
+
     userdata:   the private user data as set in Client() or userdata_set()
+
     mid:        matches the mid variable returned from the corresponding
                 unsubscribe() call.
 
@@ -130,15 +130,14 @@ while True:
     定义连接断开时的回调函数.
     
     格式:
-        disconnect_callback(client, userdata, self)
+    
+    `disconnect_callback(client, userdata, self)`
         
     client:     the client instance for this callback
+
     userdata:   the private user data as set in Client() or userdata_set()
-    rc:         the disconnection result
-                The rc parameter indicates the disconnection state. If
-                MQTT_ERR_SUCCESS (0), the callback was called in response to
-                a disconnect() call. If any other value the disconnection
-                was unexpected, such as might be caused by a network error.
+
+    rc:         the disconnection result.
 
 #### 说明
 
