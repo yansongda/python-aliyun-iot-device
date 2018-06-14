@@ -19,11 +19,14 @@ HTTPS_AUTH = "https://iot-auth.{region}.aliyuncs.com/auth/devicename"
 DEFAULT_PUBLISH_TOPIC = "/{product_key}/{device_name}/update"
 DEFAULT_SUBSCRIBE_TOPIC = "/{product_key}/{device_name}/get"
 
+SHADOW_UPDATE_TOPIC = "/shadow/update/{product_key}/{device_name}"
+SHADOW_GET_TOPIC = "/shadow/get/{product_key}/{device_name}"
+
 KEEPALIVE = 60
 CA_CERTS = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'root.cer')
 
 
-class Client(object):
+class Client(mqtt_client.Client):
     """阿里云 IOT 物联网套件设备端 MQTT 客户端 SDK
 
     基本使用方法:
@@ -53,7 +56,6 @@ class Client(object):
 
         transport: (str) 传输模式，默认为 tcp，支持 websockets
         """
-        super(Client, self).__init__()
         if not isinstance(product_device, tuple):
             raise TypeError('{pd} Must Be A Tuple'.format(pd=product_device))
 
@@ -67,40 +69,59 @@ class Client(object):
         self.domain_direct = domain_direct
         self.transport = transport
         self.clean_session = clean_session
+        self.mqtt_uri = ''
+        self.mqtt_port = 0
         self.product_key, self.device_name, self.device_secret = product_device
 
-        self.mqtt = self._get_mqtt_client()
+        self._get_mqtt_client()
 
     def connect(self, keepalive=KEEPALIVE):
         """连接阿里云 IOT 服务器
 
         keepalive: (int) 心跳秒数，60-300，默认 60秒
         """
-        return self.mqtt.connect(self.mqtt_uri, self.mqtt_port, keepalive)
+        return super(Client, self).connect(self.mqtt_uri, self.mqtt_port, keepalive)
 
     def publish(self, payload=None, qos=0, topic=None):
         """payload: (str/int/float/None) 负载
 
         qos: (int) 0/1，服务等级
 
-        topic: (string) 发布的主题，默认为阿里云默认主题，即："/{product_key}/{device_name}/update"
+        topic: (string) 发布的主题。
+                如果为 None 默认为阿里云默认主题，即："/{product_key}/{device_name}/update"；
+
+                如果为'shadow'，则为阿里云影子系统主题，即"/shadow/get/{product_key}/{device_name}"，此时payload 应为 dict 类型，包含"version", "reported" 两个key。详情请查看阿里云物联网套件官方文档。
 
         阿里云 IOT 套件不支持 retain
         """
         if topic is None:
             topic = DEFAULT_PUBLISH_TOPIC.format(product_key=self.product_key, device_name=self.device_name)
+        if topic == 'shadow':
+            import json
+            topic = SHADOW_UPDATE_TOPIC.format(product_key=self.product_key, device_name=self.device_name)
 
-        return self.mqtt.publish(topic, payload, qos, False)
+            data = {"method": payload['method']}
+            if 'reported' in payload:
+                data.update({"state": {"reported": payload['reported']}})
+            if 'version' in payload:
+                data.update({"version": payload['version']})
+            payload = json.dumps(data)
+
+        return super(Client, self).publish(topic, payload, qos, False)
 
     def subscribe(self, qos=0, topic=None):
         """qos: (int) 0/1，服务等级
 
-        topic: (string) 订阅的主题，默认为阿里云默认主题，即："/{product_key}/{device_name}/get"
+        topic: (string) 订阅的主题。
+                如果为 None 默认为阿里云默认主题，即："/{product_key}/{device_name}/get"；
+                如果为'shadow'，则为阿里云影子系统主题，即"/shadow/get/{product_key}/{device_name}"
         """
         if topic is None:
             topic = DEFAULT_SUBSCRIBE_TOPIC.format(product_key=self.product_key, device_name=self.device_name)
+        if topic == 'shadow':
+            topic = SHADOW_GET_TOPIC.format(product_key=self.product_key, device_name=self.device_name)
 
-        return self.mqtt.subscribe(topic, qos)
+        return super(Client, self).subscribe(topic, qos)
 
     def unsubscribe(self, topic=None):
         """topic: (string) 订阅的主题，默认为阿里云默认主题，即："/{product_key}/{device_name}/get"
@@ -108,160 +129,7 @@ class Client(object):
         if topic is None:
             topic = DEFAULT_SUBSCRIBE_TOPIC.format(product_key=self.product_key, device_name=self.device_name)
 
-        return self.mqtt.unsubscribe(topic)
-
-    def loop_start(self):
-        """在处理循环逻辑开始前，请先调用此方法。此方法会自动处理心跳，流入数据等
-        """
-        return self.mqtt.loop_start()
-
-    def loop_stop(self, force=False):
-        return self.mqtt.loop_stop(force)
-
-    @property
-    def on_connect(self):
-        return self.mqtt.on_connect
-
-    @on_connect.setter
-    def on_connect(self, func):
-        """ 定义 mqtt 连接成功后的回调函数.
-
-        回调函数格式:
-            connect_callback(client, userdata, flags, rc)
-
-        client:     the client instance for this callback
-        userdata:   the private user data as set in Client() or userdata_set()
-        flags:      response flags sent by the broker
-        rc:         the connection result
-
-        flags is a dict that contains response flags from the broker:
-            flags['session present'] - this flag is useful for clients that are
-                using clean session set to 0 only. If a client with clean
-                session=0, that reconnects to a broker that it has previously
-                connected to, this flag indicates whether the broker still has the
-                session information for the client. If 1, the session still exists.
-
-        The value of rc indicates success or not:
-            0: Connection successful
-            1: Connection refused - incorrect protocol version
-            2: Connection refused - invalid client identifier
-            3: Connection refused - server unavailable
-            4: Connection refused - bad username or password
-            5: Connection refused - not authorised
-            6-255: Currently unused.
-        """
-        self.mqtt.on_connect = func
-
-    @property
-    def on_subscribe(self):
-        """如果设置此回调函数，则 mqtt broker 返回订阅消息时将调用此回调函数."""
-        return self.mqtt.on_subscribe
-
-    @on_subscribe.setter
-    def on_subscribe(self, func):
-        """ 定义订阅成功后的回调函数.
-
-        回调函数格式:
-            subscribe_callback(client, userdata, mid, granted_qos)
-
-        client:         the client instance for this callback
-        userdata:       the private user data as set in Client() or userdata_set()
-        mid:            matches the mid variable returned from the corresponding
-                        subscribe() call.
-        granted_qos:    list of integers that give the QoS level the broker has
-                        granted for each of the different subscription requests.
-        """
-        self.mqtt.on_subscribe = func
-
-    @property
-    def on_message(self):
-        """当一条客户端订阅的 topic 收到消息时，此回调函数调用.
-
-        This callback will be called for every message received. Use
-        message_callback_add() to define multiple callbacks that will be called
-        for specific topic filters."""
-        return self.mqtt.on_message
-
-    @on_message.setter
-    def on_message(self, func):
-        """ 定义收到消息时的回调函数.
-
-        回调函数格式:
-            on_message_callback(client, userdata, message)
-
-        client:     the client instance for this callback
-        userdata:   the private user data as set in Client() or userdata_set()
-        message:    an instance of MQTTMessage.
-                    This is a class with members topic, payload, qos, retain.
-        """
-        self.mqtt.on_message = func
-
-    @property
-    def on_publish(self):
-        """当客户端调用 publish() 方法成功发送一条消息给 broker 时，此回调函数运行.
-
-        For messages with QoS levels 1 and 2, this means that the appropriate
-        handshakes have completed. For QoS 0, this simply means that the message
-        has left the client.
-        This callback is important because even if the publish() call returns
-        success, it does not always mean that the message has been sent."""
-        return self.mqtt.on_publish
-
-    @on_publish.setter
-    def on_publish(self, func):
-        """ 定义 publish() 方法成功发送消息时的回调函数.
-
-        格式:
-            on_publish_callback(client, userdata, mid)
-
-        client:     the client instance for this callback
-        userdata:   the private user data as set in Client() or userdata_set()
-        mid:        matches the mid variable returned from the corresponding
-                    publish() call, to allow outgoing messages to be tracked.
-        """
-        self.mqtt.on_publish = func
-
-    @property
-    def on_unsubscribe(self):
-        """当取消订阅时，此回调函数运行."""
-        return self.mqtt.on_unsubscribe
-
-    @on_unsubscribe.setter
-    def on_unsubscribe(self, func):
-        """ 定义取消订阅某条 topic 时的回调函数.
-
-        格式:
-            unsubscribe_callback(client, userdata, mid)
-
-        client:     the client instance for this callback
-        userdata:   the private user data as set in Client() or userdata_set()
-        mid:        matches the mid variable returned from the corresponding
-                    unsubscribe() call.
-        """
-        self.mqtt.on_unsubscribe = func
-
-    @property
-    def on_disconnect(self):
-        """当和 broker 连接断开时此回调函数运行.
-        """
-        return self.mqtt.on_disconnect
-
-    @on_disconnect.setter
-    def on_disconnect(self, func):
-        """ 定义连接断开时的回调函数.
-
-        格式:
-            disconnect_callback(client, userdata, self)
-
-        client:     the client instance for this callback
-        userdata:   the private user data as set in Client() or userdata_set()
-        rc:         the disconnection result
-                    The rc parameter indicates the disconnection state. If
-                    MQTT_ERR_SUCCESS (0), the callback was called in response to
-                    a disconnect() call. If any other value the disconnection
-                    was unexpected, such as might be caused by a network error.
-        """
-        self.mqtt.on_disconnect = func
+        return super(Client, self).unsubscribe(topic)
 
     def _get_mqtt_client(self):
         """获取 MQTT 客户端实例
@@ -273,12 +141,10 @@ class Client(object):
         else:
             mqtt_client_id, mqtt_user, mqtt_passwd = self._get_https_mqtt_info()
 
-        mqtt = mqtt_client.Client(mqtt_client_id, transport=self.transport, clean_session=self.clean_session)
-        mqtt.username_pw_set(mqtt_user, mqtt_passwd)
+        super(Client, self).__init__(mqtt_client_id, transport=self.transport, clean_session=self.clean_session)
+        self.username_pw_set(mqtt_user, mqtt_passwd)
         if not self.domain_direct or self.tls:
-            mqtt.tls_set(ca_certs=self.ca_certs)
-
-        return mqtt
+            self.tls_set(ca_certs=self.ca_certs)
 
     def _get_doamin_direct_mqtt_info(self):
         """获取域名直连 MQTT 连接信息
