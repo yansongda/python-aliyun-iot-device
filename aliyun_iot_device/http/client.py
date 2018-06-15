@@ -50,7 +50,6 @@ class Client(object):
         if topic is None:
             topic = DEFAULT_PUBLISH_TOPIC.format(product_key=self.product_key, device_name=self.device_name)
         if topic == 'shadow':
-            import json
             topic = SHADOW_UPDATE_TOPIC.format(product_key=self.product_key, device_name=self.device_name)
 
             data = {"method": payload['method']}
