@@ -17,7 +17,7 @@
 
 ## 安装
 
-`pip3 install yansondga-aliyun-iot-device`
+`pip3 install yansongda-aliyun-iot-device`
 
 
 ## 使用
